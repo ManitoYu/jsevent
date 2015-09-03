@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>JS事件兼容</title>
+</head>
+<body>
+	
+	<button id="test" type="button">Test</button>
+	
+	<script>
+
+		/**
+		 * IE9以下事件绑定兼容性处理
+		 * 
+		 * 解决了函数名的问题
+		 * 解决了IE下事件必须加上前缀on
+		 * 解决了IE下所绑定函数的执行先后问题，统一是先绑定先执行
+		 * 解决的this指向问题，IE默认指向window
+		 */
+		
+		var $ = function (selector) {
+			return document.getElementById(selector);
+		};
+
+		$.addEvent = (function () {
+
+			var ua = navigator.userAgent;
+
+			if (/MSIE/.test(ua)) {
+				/**
+				 * IE兼容
+				 */
+				return function (obj, event, callback, type) {
+					// 设置事件列表
+					var events = obj['_' + event] = obj['_' + event] || [];
+					events.push(callback);
+
+					// 触发函数
+					obj['on' + event] = function ()  {
+						// 对当前事件列表进行遍历
+						for (var i = 0; i < events.length; i += 1) {
+							// 改变this指向并执行
+							events[i].call(obj, window.event);
+						}
+					};
+				}
+			} else {
+				return function (obj, event, callback, type) {
+					obj.addEventListener(event, callback, type);
+				}
+			}
+
+		})();
+
+		$.addEvent($('test'), 'click', function (ev) {
+			alert(ev.srcElement == this);
+			alert(1);
+		});
+		$.addEvent($('test'), 'click', function (ev) {
+			alert(2);
+		});
+			
+	</script>
+</body>
+</html>
